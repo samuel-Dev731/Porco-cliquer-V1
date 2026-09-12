@@ -17,6 +17,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Random
 
@@ -42,6 +45,21 @@ class MainActivity : AppCompatActivity() {
     // Handler inicializado de forma limpa e compatível com as regras de concorrência do futuro
     private val gameHandler = Handler(Looper.getMainLooper())
     private lateinit var gameRunnable: Runnable
+
+    // Cache de cores para otimização
+    private val colorCache = mapOf(
+        "rosa" to null,
+        "azul" to Color.parseColor("#440000FF"),
+        "dourado" to Color.parseColor("#44FFD700"),
+        "arco-iris" to Color.parseColor("#44FF00FF")
+    )
+
+    // Rastreamento de último estado da UI
+    private var ultimoTextoCliques = ""
+    private var ultimoTextoUpgrade = ""
+    private var ultimoTextoFazenda = ""
+    private var ultimaCorPorco = "rosa"
+    private var ultimoVirusAtivo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,23 +166,55 @@ class MainActivity : AppCompatActivity() {
         botaoFazenda: Button,
         botaoPorco: ImageButton
     ) {
-        if (virusAtivo) {
-            textoCliques.text = "⚠️ SISTEMA INFECTADO! ⚠️\nMoedas: $moedas (Roubando...)\nNível: $nivel ($corDoPorco)"
+        // Construir novo texto
+        val novoTextoCliques = if (virusAtivo) {
+            "⚠️ SISTEMA INFECTADO! ⚠️\nMoedas: $moedas (Roubando...)\nNível: $nivel ($corDoPorco)"
         } else {
-            textoCliques.text = "Cliques: $cliques\nMoedas: $moedas (+$moedasPorSegundo/s)\nNível: $nivel ($corDoPorco)"
+            "Cliques: $cliques\nMoedas: $moedas (+$moedasPorSegundo/s)\nNível: $nivel ($corDoPorco)"
         }
-        botaoUpgrade.text = "Multiplicador Lvl $nivelMultiplicador\n(Custo: ${calcularCustoMultiplicador()})"
-        botaoFazenda.text = "Fazenda Lvl $nivelFazenda\n(Custo: ${calcularCustoFazenda()})"
+        
+        val novoTextoUpgrade = "Multiplicador Lvl $nivelMultiplicador\n(Custo: ${calcularCustoMultiplicador()})"
+        val novoTextoFazenda = "Fazenda Lvl $nivelFazenda\n(Custo: ${calcularCustoFazenda()})"
 
-        try {
-            when (corDoPorco) {
-                "rosa" -> botaoPorco.clearColorFilter()
-                "azul" -> botaoPorco.setColorFilter(Color.parseColor("#440000FF"), PorterDuff.Mode.SRC_ATOP)
-                "dourado" -> botaoPorco.setColorFilter(Color.parseColor("#44FFD700"), PorterDuff.Mode.SRC_ATOP)
-                else -> botaoPorco.setColorFilter(Color.parseColor("#44FF00FF"), PorterDuff.Mode.SRC_ATOP)
+        // Apenas atualizar se mudou
+        if (novoTextoCliques != ultimoTextoCliques) {
+            textoCliques.text = novoTextoCliques
+            ultimoTextoCliques = novoTextoCliques
+        }
+        
+        if (novoTextoUpgrade != ultimoTextoUpgrade) {
+            botaoUpgrade.text = novoTextoUpgrade
+            ultimoTextoUpgrade = novoTextoUpgrade
+        }
+        
+        if (novoTextoFazenda != ultimoTextoFazenda) {
+            botaoFazenda.text = novoTextoFazenda
+            ultimoTextoFazenda = novoTextoFazenda
+        }
+
+        // Atualizar cor do porco apenas se mudou
+        if (corDoPorco != ultimaCorPorco) {
+            try {
+                when (corDoPorco) {
+                    "rosa" -> botaoPorco.clearColorFilter()
+                    else -> {
+                        val cor = colorCache[corDoPorco]
+                        if (cor != null) {
+                            botaoPorco.setColorFilter(cor, PorterDuff.Mode.SRC_ATOP)
+                        }
+                    }
+                }
+                ultimaCorPorco = corDoPorco
+            } catch (t: Throwable) {
+                // Se o filtro de cor deixar de existir nas APIs futuras, o jogo continua rodando normalmente sem travar
             }
-        } catch (t: Throwable) {
-            // Se o filtro de cor deixar de existir nas APIs futuras, o jogo continua rodando normalmente sem travar
+        }
+
+        // Atualizar visibilidade do antivírus apenas se mudou
+        if (virusAtivo != ultimoVirusAtivo) {
+            botaoUpgrade.isEnabled = !virusAtivo
+            botaoFazenda.isEnabled = !virusAtivo
+            ultimoVirusAtivo = virusAtivo
         }
     }
 
@@ -216,7 +266,7 @@ class MainActivity : AppCompatActivity() {
         cliques = prefs.getLong("cliques_totais", 0L)
         moedas = prefs.getLong("moedas_totais", 0L)
         nivel = prefs.getInt("nivel_porco", 1)
-        corDoPorco = prefs.getString("cor_atual", "rosa")
+        corDoPorco = prefs.getString("cor_atual", "rosa") ?: "rosa"
         nivelMultiplicador = prefs.getInt("nivel_multiplicador", 1)
         nivelFazenda = prefs.getInt("nivel_fazenda", 0)
         moedasPorSegundo = prefs.getLong("moedas_segundo", 0L)
@@ -224,10 +274,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun verificarELimparCache() {
-        Thread(Runnable {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val cacheDirectory = cacheDir ?: return@Runnable
-                val files = cacheDirectory.listFiles() ?: return@Runnable
+                val cacheDirectory = cacheDir ?: return@launch
+                val files = cacheDirectory.listFiles() ?: return@launch
                 var tamanhoEmBytes = 0L
                 
                 for (file in files) {
@@ -243,12 +293,15 @@ class MainActivity : AppCompatActivity() {
             } catch (t: Throwable) {
                 // Garante imunidade contra restrições de storage futuro
             }
-        }).start()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        salvarProgresso()
+        // Salvar em background thread para não bloquear UI
+        lifecycleScope.launch(Dispatchers.Default) {
+            salvarProgresso()
+        }
     }
 
     override fun onDestroy() {
@@ -259,3 +312,4 @@ class MainActivity : AppCompatActivity() {
         }
         super.onDestroy()
     }
+}
