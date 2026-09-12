@@ -22,8 +22,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Criar diretórios necessários
-      run: mkdir -p ~/.gradle
-
+      run: mkdir -p ~/.g
     - name: Configurar gradle.properties
       run: |
         echo "org.gradle.jvmargs=-Xmx4096m" > ~/.gradle/gradle.properties
