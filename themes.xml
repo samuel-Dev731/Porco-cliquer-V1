@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Define o tema customizado oficial do Porco Cliquer -->
+    <style name="Theme.PorcoCliquer" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Cor principal do app e da barra de notificações da One UI -->
+        <item name="colorPrimary">#FFC0CB</item>
+        <item name="colorPrimaryDark">#FF85A1</item>
+        <item name="colorAccent">#FF4081</item>
+        
+        <!-- Garante que a barra de notificações mude de cor no Android moderno -->
+        <item name="android:statusBarColor">#FF85A1</item>
+        
+        <!-- Cor de fundo para a tela do jogo -->
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
+</resources>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://android.com"
+    xmlns:tools="http://android.com"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#F5F6FA"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textoCliques"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cliques: 0\nMoedas: 0 🪙 (+0/s)\nNível: 1 (rosa)"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="#2C3E50"
+        android:layout_marginBottom="24dp" />
+
+    <ImageButton
+        android:id="@+id/botaoPorco"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:scaleType="fitCenter"
+        android:src="@drawable/porco_rosa"
+        android:contentDescription="Botão do Porco"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Botão Intermitente do Antivírus (Inicia escondido) -->
+    <Button
+        android:id="@+id/botaoAntivirus"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:text="🛡️ EJETAR VÍRUS (Clique aqui!)"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#D32F2F"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone"
+        android:padding="12dp" />
+
+    <Button
+        android:id="@+id/botaoUpgrade"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:text="Multiplicador Lvl 1\n(Custo: 50 🪙)"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#4CAF50"
+        android:layout_marginBottom="12dp"
+        android:padding="8dp" />
+
+    <Button
+        android:id="@+id/botaoFazenda"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:text="Fazenda Lvl 0\n(Custo: 100 🪙)"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#2196F3"
+        android:padding="8dp" />
+
+</LinearLayout>
