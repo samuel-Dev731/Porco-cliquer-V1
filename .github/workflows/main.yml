@@ -1,0 +1,33 @@
+name: Gerar APK Automático
+
+on:
+  push:
+    branches: [ "main", "principal" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar o Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Dar permissão ao Gradle
+      run: chmod +x gradlew
+      continue-on-error: true
+
+    - name: Compilar o APK de Debug
+      run: ./gradlew assembleDebug
+
+    - name: Salvar o arquivo APK pronto
+      uses: actions/upload-artifact@v4
+      with:
+        name: Jogo-Porco-Clicker
+        path: app/build/outputs/apk/debug/app-debug.apk
+        
