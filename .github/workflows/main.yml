@@ -20,14 +20,30 @@ jobs:
 
     - name: Dar permissão ao Gradle
       run: chmod +x gradlew
-      continue-on-error: true
+
+    - name: Criar diretórios necessários
+      run: mkdir -p ~/.gradle
+
+    - name: Configurar gradle.properties
+      run: |
+        echo "org.gradle.jvmargs=-Xmx4096m" > ~/.gradle/gradle.properties
+        echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
+        echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
 
     - name: Compilar o APK de Debug
-      run: ./gradlew assembleDebug
+      run: ./gradlew clean assembleDebug --stacktrace
+
+    - name: Verificar se o APK foi gerado
+      run: ls -la app/build/outputs/apk/debug/ || echo "Diretório não encontrado"
 
     - name: Salvar o arquivo APK pronto
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: Jogo-Porco-Clicker
         path: app/build/outputs/apk/debug/app-debug.apk
-        
+        retention-days: 30
+
+    - name: Notificar erro na compilação
+      if: failure()
+      run: echo "❌ Falha na compilação do APK"
